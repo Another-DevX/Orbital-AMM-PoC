@@ -7,28 +7,34 @@ import {console} from "forge-std/console.sol";
 
 contract OrbitalInvariantTest is Test {
     OrbitalAMM amm;
+    uint256 expectedInvariant; // Ghost variable to track expected invariant
 
     function setUp() public {
         uint[3] memory initial = [uint(1e18), 2e18, 3e18];
-        uint[3] memory r = [uint(4e18), 4e18, 4e18]; // Corrected to match constructor
+        uint[3] memory r = [uint(4e18), 4e18, 4e18];
         amm = new OrbitalAMM(r, initial);
+        
+        // Single deposit to establish liquidity and set expected invariant
+        amm.deposit(0, 1e18);
+        expectedInvariant = amm.R2();
+        
+        // Verify initial state
+        assertEq(sphericalInvariant(), expectedInvariant);
+        
+        // Exclude deposit function from fuzzing - we only want to test swaps
+        bytes4[] memory selectors = new bytes4[](1);
+        selectors[0] = amm.deposit.selector;
+        excludeSelector(FuzzSelector({
+            addr: address(amm),
+            selectors: selectors
+        }));
     }
 
-    function testInvariantHoldsAfterSwap() public {
-        // Give user some balance to swap
-        amm.deposit(0, 1e18);
-        
-        // After deposit, R2 should be recalculated, so invariant should match
-        assertEq(sphericalInvariant(), amm.R2());
-        
-        // Now test that swap preserves the invariant (with small tolerance for rounding)
-        uint beforeInvariant = amm.R2();
-        amm.swap(0, 1, 5e17);
-        uint afterInvariant = sphericalInvariant();
-        
-        // Allow small rounding error (less than 0.001%)
-        uint tolerance = beforeInvariant / 100000; // 0.001%
-        assertLe(diff(afterInvariant, beforeInvariant), tolerance);
+    function invariant_sphericalInvariantHolds() public {
+        // Test that the spherical invariant is preserved (with small tolerance for rounding)
+        uint currentInvariant = sphericalInvariant();
+        uint tolerance = expectedInvariant / 100000; // 0.001%
+        assertLe(diff(currentInvariant, expectedInvariant), tolerance);
     }
 
     function sphericalInvariant() internal view returns (uint) {
