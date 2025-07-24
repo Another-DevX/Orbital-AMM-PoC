@@ -13,25 +13,32 @@ contract OrbitalInvariantTest is Test {
         uint[3] memory initial = [uint(1e18), 2e18, 3e18];
         uint[3] memory r = [uint(4e18), 4e18, 4e18];
         amm = new OrbitalAMM(r, initial);
-        
+
         // Single deposit to establish liquidity and set expected invariant
         amm.deposit(0, 1e18);
         expectedInvariant = amm.R2();
-        
+
         // Verify initial state
         assertEq(sphericalInvariant(), expectedInvariant);
-        
+
         // Exclude deposit function from fuzzing - we only want to test swaps
         bytes4[] memory selectors = new bytes4[](1);
         selectors[0] = amm.deposit.selector;
-        excludeSelector(FuzzSelector({
-            addr: address(amm),
-            selectors: selectors
-        }));
+        excludeSelector(
+            FuzzSelector({addr: address(amm), selectors: selectors})
+        );
+        bytes4[] memory swapSelectors = new bytes4[](1);
+        swapSelectors[0] = amm.swap.selector;
+        targetSelector(
+            FuzzSelector({
+                addr: address(amm),
+                selectors: swapSelectors
+            })
+        );
     }
 
-    function invariant_sphericalInvariantHolds() public {
-        // Test that the spherical invariant is preserved (with small tolerance for rounding)
+    function invariant_sphericalInvariantHolds(
+    ) public {
         uint currentInvariant = sphericalInvariant();
         uint tolerance = expectedInvariant / 100000; // 0.001%
         assertLe(diff(currentInvariant, expectedInvariant), tolerance);
