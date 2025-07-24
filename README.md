@@ -4,26 +4,26 @@ This is a minimal implementation of the [Orbital AMM](https://www.paradigm.xyz/2
 
 ## Invariant
 
-We define reserves `x = [x₀, x₁, x₂]` and a shared scalar center `r`.  
+Define reserves $x = [x_0, x_1, x_2]$ and a shared scalar center $r$.
 The system enforces:
 
-```
-(r - x₀)² + (r - x₁)² + (r - x₂)² = r²
-```
+$$
+(r - x_0)^2 + (r - x_1)^2 + (r - x_2)^2 = r^2
+$$
 
-This keeps all reserves on a sphere of radius `r` centered at `(r, r, r)`.
+This keeps all reserves on a sphere of radius $r$ centered at $(r, r, r)$.
 
 ## Swap Rule
 
-To swap in `Δxᵢ` of token `i` and receive `Δxⱼ` of token `j`, while keeping token `k` fixed:
+To swap in $\Delta x_i$ of token $i$ and receive $\Delta x_j$ of token $j$, while keeping token $k$ fixed:
 
-```
-Δxⱼ = sqrt( r² - (r - xₖ)² - (r - xᵢ - Δxᵢ)² ) - (r - xⱼ)
-```
+$$
+\Delta x_j = \sqrt{ r^2 - (r - x_k)^2 - (r - x_i - \Delta x_i)^2 } - (r - x_j)
+$$
 
-Only three tokens are supported. No fees, no liquidity management — just the core math.
+Only three tokens are supported. No fees, no liquidity management—just the core math.
 
 ## Notes
 
-- PoC only: no safety checks or rounding protections.
-- Trades adapt to reserve imbalances via spherical curvature.
+* **PoC only**: no safety checks or rounding protections.
+* Trades adapt to reserve imbalances via spherical curvature.
